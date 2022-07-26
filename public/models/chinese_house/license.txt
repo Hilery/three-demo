@@ -1,0 +1,11 @@
+Model Information:
+* title:	chinese house
+* source:	https://sketchfab.com/3d-models/chinese-house-2bb6ef8d3a5a4019b00bf86bbacd96cc
+* author:	noyou (https://sketchfab.com/zsm123)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "chinese house" (https://sketchfab.com/3d-models/chinese-house-2bb6ef8d3a5a4019b00bf86bbacd96cc) by noyou (https://sketchfab.com/zsm123) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
