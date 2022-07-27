@@ -13,5 +13,5 @@ module.exports = {
       "useBuiltIns": "usage",
       "modules": "cjs" // the default value is auto
     }]
-  ],
+  ]
 }
