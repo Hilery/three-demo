@@ -18,6 +18,10 @@
           <i class="el-icon-setting"></i>
           <span slot="title">骰子</span>
         </el-menu-item>
+             <el-menu-item index="5">
+          <i class="el-icon-setting"></i>
+          <span slot="title">传送门</span>
+        </el-menu-item>
       </el-menu>
     </div>
     <div class="right">
@@ -58,6 +62,10 @@ export default {
           break;
         case 4:
           this.gltfUrl = "./models/touzi/scene.gltf";
+          console.log(e);
+          break;
+                  case 5:
+          this.gltfUrl = "./models/portal/portal.gltf";
           console.log(e);
           break;
       }
