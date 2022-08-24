@@ -1,91 +1,97 @@
 <template>
   <div id="app">
     <div class="left">
-      <el-menu class="el-menu-vertical-demo" @select="handleSelect">
+      <el-menu
+        default-active="2"
+        class="el-menu-vertical-demo"
+        @open="handleOpen"
+        @close="handleClose"
+        @select="handleSelect"
+      >
         <el-menu-item index="1">
           <i class="el-icon-location"></i>
-          <span slot="title">房子</span>
+          <span>导航一</span>
         </el-menu-item>
         <el-menu-item index="2">
           <i class="el-icon-menu"></i>
-          <span slot="title">汽水</span>
+          <span slot="title">导航二</span>
         </el-menu-item>
         <el-menu-item index="3">
           <i class="el-icon-document"></i>
-          <span slot="title">锤子</span>
+          <span slot="title">导航三</span>
         </el-menu-item>
         <el-menu-item index="4">
           <i class="el-icon-setting"></i>
-          <span slot="title">骰子</span>
+          <span slot="title">导航四</span>
         </el-menu-item>
-             <el-menu-item index="5">
+        <el-menu-item index="5">
           <i class="el-icon-setting"></i>
-          <span slot="title">传送门</span>
+          <span slot="title">导航五</span>
         </el-menu-item>
       </el-menu>
     </div>
     <div class="right">
-      <div class="column">
-        <gltf-viewer :url="gltfUrl"></gltf-viewer>
-      </div>
+      <router-view></router-view>
     </div>
   </div>
 </template>
 
 <script>
-import GltfViewer from "./components/GltfViewer";
-
 export default {
-  name: "app",
-  components: {
-    GltfViewer,
-  },
-  data() {
-    return {
-      gltfUrl: "./models/touzi/scene.gltf",
-    };
-  },
   methods: {
-    handleSelect(e) {
-      switch (parseInt(e)) {
-        case 1:
-          this.gltfUrl = "./models/chinese_house/scene.gltf";
-          console.log(e);
+    handleOpen(key, keyPath) {
+      console.log(key, keyPath);
+    },
+    handleClose(key, keyPath) {
+      console.log(key, keyPath);
+    },
+    handleSelect(key, keyPath) {
+      const [index] = key;
+
+      console.log(this.$router);
+      switch (index) {
+        case "1":
+          this.$router.push("/home");
           break;
-        case 2:
-          this.gltfUrl = "./models/monster_energy_drink/scene.gltf";
-          console.log(e);
+        case "2":
+          this.$router.push("/about");
           break;
-        case 3:
-          this.gltfUrl = "./models/chuizi/scene.gltf";
-          console.log(e);
+        case "3":
+          this.$router.push("/tokyo");
           break;
-        case 4:
-          this.gltfUrl = "./models/touzi/scene.gltf";
-          console.log(e);
+        case "4":
+          this.$router.push("/raycaster");
           break;
-                  case 5:
-          this.gltfUrl = "./models/portal/portal.gltf";
-          console.log(e);
+        case "5":
+          this.$router.push("/decals");
           break;
       }
     },
   },
 };
 </script>
-
 <style lang="less">
 #app {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  color: #2c3e50;
   display: flex;
-  .left {
-    flex: 1;
-  }
-  .right {
-    flex: 9;
-  }
-}
-.column {
-  width: 100%;
+  width: 100vw;
   height: 100vh;
+}
+.left {
+  width: 200px;
+  flex-shrink: 0;
+  border-right: 1px solid #ccc;
+}
+.right {
+  flex: 1;
+  height: 100%;
+}
+* {
+  margin: 0;
+  padding: 0;
 }
 </style>

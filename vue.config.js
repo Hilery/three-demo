@@ -1,2 +1,3 @@
 module.exports = {
+    lintOnSave: false
 }
