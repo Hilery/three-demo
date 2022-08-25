@@ -10,23 +10,27 @@
       >
         <el-menu-item index="1">
           <i class="el-icon-location"></i>
-          <span>导航一</span>
+          <span>沙滩小岛</span>
         </el-menu-item>
         <el-menu-item index="2">
           <i class="el-icon-menu"></i>
-          <span slot="title">导航二</span>
+          <span slot="title">3D城市</span>
         </el-menu-item>
         <el-menu-item index="3">
           <i class="el-icon-document"></i>
-          <span slot="title">导航三</span>
+          <span slot="title">迷你东京</span>
         </el-menu-item>
         <el-menu-item index="4">
           <i class="el-icon-setting"></i>
-          <span slot="title">导航四</span>
+          <span slot="title">鼠标选取</span>
         </el-menu-item>
         <el-menu-item index="5">
           <i class="el-icon-setting"></i>
-          <span slot="title">导航五</span>
+          <span slot="title">喷射</span>
+        </el-menu-item>
+        <el-menu-item index="6">
+          <i class="el-icon-setting"></i>
+          <span slot="title">3D看房</span>
         </el-menu-item>
       </el-menu>
     </div>
@@ -64,6 +68,9 @@ export default {
           break;
         case "5":
           this.$router.push("/decals");
+          break;
+        case "6":
+          this.$router.push("/house");
           break;
       }
     },

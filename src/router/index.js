@@ -36,6 +36,11 @@ const routes = [
     path: '/decals',
     name: 'decals',
     component: () => import('../views/Decals.vue')
+  },
+  {
+    path: '/house',
+    name: 'house',
+    component: () => import('../views/3Dhouse.vue')
   }
 ]
 

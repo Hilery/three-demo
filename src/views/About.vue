@@ -1,5 +1,5 @@
 <template>
-  <div id="about" class="about"></div>
+  <div id="about" class="about" />
 </template>
 
 <script>
@@ -69,18 +69,22 @@ export default {
     // });
     // 照相机
     const camera = new THREE.PerspectiveCamera(
-      45,
+      75,
       size.width / size.height,
       1,
       30000
     )
-    camera.position.set(1200, 700, 121)
+    camera.position.set(500, 500, 2200)
     scene.add(camera)
 
-    // 控制器
-    const controls = new OrbitControls(camera, renderer.domElement)
-    // 是否使用阻尼器
-    controls.enableDamping = true
+    // // 控制器
+    // const controls = new OrbitControls(camera, renderer.domElement)
+    // // 是否使用阻尼器
+    // controls.enableDamping = true
+    const controls = new FirstPersonControls(camera, renderer.domElement)
+    controls.movementSpeed = 150
+    controls.lookSpeed = 0.1
+    controls.handleResize()
 
     const city = new CityClass()
     scene.add(city.group)
@@ -89,7 +93,7 @@ export default {
     const animate = () => {
       const time = clock.getDelta()
       city.animate(time)
-      // controls.update()
+      controls.update(time)
       renderer.render(scene, camera)
       window.requestAnimationFrame(animate)
     }
