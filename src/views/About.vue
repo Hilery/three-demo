@@ -72,9 +72,9 @@ export default {
       75,
       size.width / size.height,
       1,
-      30000
+      3000
     )
-    camera.position.set(500, 500, 2200)
+    camera.position.set(500, 300, 1600)
     scene.add(camera)
 
     // // 控制器
