@@ -38,9 +38,9 @@ const routes = [
     component: () => import('../views/Decals.vue')
   },
   {
-    path: '/house',
-    name: 'house',
-    component: () => import('../views/3Dhouse.vue')
+    path: '/galaxy',
+    name: 'galaxy',
+    component: () => import('../views/Galaxy.vue')
   }
 ]
 

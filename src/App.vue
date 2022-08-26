@@ -9,33 +9,33 @@
         @select="handleSelect"
       >
         <el-menu-item index="1">
-          <i class="el-icon-location"></i>
+          <i class="el-icon-location" />
           <span>沙滩小岛</span>
         </el-menu-item>
         <el-menu-item index="2">
-          <i class="el-icon-menu"></i>
+          <i class="el-icon-menu" />
           <span slot="title">3D城市</span>
         </el-menu-item>
         <el-menu-item index="3">
-          <i class="el-icon-document"></i>
+          <i class="el-icon-document" />
           <span slot="title">迷你东京</span>
         </el-menu-item>
         <el-menu-item index="4">
-          <i class="el-icon-setting"></i>
+          <i class="el-icon-setting" />
           <span slot="title">鼠标选取</span>
         </el-menu-item>
         <el-menu-item index="5">
-          <i class="el-icon-setting"></i>
+          <i class="el-icon-setting" />
           <span slot="title">喷射</span>
         </el-menu-item>
         <el-menu-item index="6">
-          <i class="el-icon-setting"></i>
+          <i class="el-icon-setting" />
           <span slot="title">3D看房</span>
         </el-menu-item>
       </el-menu>
     </div>
     <div class="right">
-      <router-view></router-view>
+      <router-view />
     </div>
   </div>
 </template>
@@ -44,38 +44,38 @@
 export default {
   methods: {
     handleOpen(key, keyPath) {
-      console.log(key, keyPath);
+      console.log(key, keyPath)
     },
     handleClose(key, keyPath) {
-      console.log(key, keyPath);
+      console.log(key, keyPath)
     },
     handleSelect(key, keyPath) {
-      const [index] = key;
+      const [index] = key
 
-      console.log(this.$router);
+      console.log(this.$router)
       switch (index) {
-        case "1":
-          this.$router.push("/home");
-          break;
-        case "2":
-          this.$router.push("/about");
-          break;
-        case "3":
-          this.$router.push("/tokyo");
-          break;
-        case "4":
-          this.$router.push("/raycaster");
-          break;
-        case "5":
-          this.$router.push("/decals");
-          break;
-        case "6":
-          this.$router.push("/house");
-          break;
+        case '1':
+          this.$router.push('/home')
+          break
+        case '2':
+          this.$router.push('/about')
+          break
+        case '3':
+          this.$router.push('/tokyo')
+          break
+        case '4':
+          this.$router.push('/raycaster')
+          break
+        case '5':
+          this.$router.push('/decals')
+          break
+        case '6':
+          this.$router.push('/galaxy')
+          break
       }
-    },
-  },
-};
+    }
+  }
+}
 </script>
 <style lang="less">
 #app {

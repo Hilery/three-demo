@@ -90,8 +90,9 @@ class City {
     this.isStart = false// 是否自动启动
     const cityArray = ['CITY_UNTRIANGULATED']
     const floorArray = ['LANDMASS']
-
+    let mixer
     this.loadFbx('/static/model/shanghai.FBX').then(object => {
+      console.log(object)
       this.group.add(object)
 
       object.traverse((child) => {
@@ -103,6 +104,9 @@ class City {
           this.setFloor(child)
         }
       })
+      mixer = new THREE.AnimationMixer(object)
+      mixer.clipAction(object.animations[0]).play()
+      this.mixer = mixer
     })
     this.init()
   }
@@ -459,7 +463,7 @@ class City {
     animate = (dt) => {
       if (dt > 1) return false
       this.time.value += dt
-
+      if (this.mixer) this.mixer.update(dt)
       // 启动
       if (this.isStart) {
         this.StartTime.value += dt * 0.5
