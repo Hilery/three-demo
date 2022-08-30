@@ -39,7 +39,8 @@ export default {
       size: {
         width: '',
         height: ''
-      }
+      },
+      clock: ''
     }
   },
   mounted() {
@@ -56,10 +57,11 @@ export default {
       this.renderer.setSize(this.size.width, this.size.height)
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     })
+    this.clock = new THREE.Clock()
     this.init()
     this.generateGalaxy()
-    this.animate()
     this.addGui()
+    this.animate()
   },
   methods: {
     // 初始化
@@ -85,6 +87,7 @@ export default {
       // 初始化控制器
       const control = new OrbitControls(this.camera, this.renderer.domElement)
       control.enableDamping = true
+      this.control = control
     },
     generateGalaxy() {
       if (this.points !== null) {
@@ -99,9 +102,68 @@ export default {
       const colors = new Float32Array(this.parameters.count * 3)
       const scales = new Float32Array(this.parameters.count * 1)
       const insideColor = new THREE.Color(this.parameters.insideColor)
+      const outsideColor = new THREE.Color(this.parameters.outsideColor)
+
+      for (let i = 0; i < this.parameters.count; i++) {
+        const i3 = i * 3
+        const radius = Math.random() * this.parameters.radius
+        const branchAngle = ((i % this.parameters.branches) / this.parameters.branches) * 2 * Math.PI
+        const randomX =
+      Math.pow(Math.random(), this.parameters.randomnessPower) *
+      (Math.random() < 0.5 ? 1 : -1) *
+      this.parameters.randomness *
+      radius
+        const randomY =
+      Math.pow(Math.random(), this.parameters.randomnessPower) *
+      (Math.random() < 0.5 ? 1 : -1) *
+      this.parameters.randomness *
+      radius
+        const randomZ =
+      Math.pow(Math.random(), this.parameters.randomnessPower) *
+      (Math.random() < 0.5 ? 1 : -1) *
+      this.parameters.randomness *
+      radius
+        positions[i3] = Math.cos(branchAngle) * radius
+        positions[i3 + 1] = 0
+        positions[i3 + 2] = Math.sin(branchAngle) * radius
+
+        randomness[i3] = randomX
+        randomness[i3 + 1] = randomY
+        randomness[i3 + 2] = randomZ
+        const mixedColor = insideColor.clone()
+        mixedColor.lerp(outsideColor, radius / this.parameters.radius)
+
+        colors[i3] = mixedColor.r
+        colors[i3 + 1] = mixedColor.g
+        colors[i3 + 2] = mixedColor.b
+
+        // Scale
+        scales[i] = Math.random()
+      }
+      this.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+      this.geometry.setAttribute('aRandomness', new THREE.BufferAttribute(randomness, 3))
+      this.geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+      this.geometry.setAttribute('aScale', new THREE.BufferAttribute(scales, 1))
+
+      this.material = new THREE.ShaderMaterial({
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        vertexColors: true,
+        uniforms: {
+          uTime: { value: 0 },
+          uSize: { value: 30 * this.renderer.getPixelRatio() }
+        },
+        vertexShader: galaxyVertexShader,
+        fragmentShader: galaxyFragmentShader
+      })
+      this.points = new THREE.Points(this.geometry, this.material)
+      this.scene.add(this.points)
     },
     animate() {
-      requestAnimationFrame(this.animate)
+      const elapsedTime = this.clock.getElapsedTime()
+      this.material.uniforms.uTime.value = elapsedTime
+      this.control.update()
+      window.requestAnimationFrame(this.animate)
       this.renderer.render(this.scene, this.camera)
     },
     addGui() {
