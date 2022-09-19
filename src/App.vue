@@ -2,7 +2,7 @@
   <div id="app">
     <div class="left">
       <el-menu
-        default-active="2"
+        default-active="7"
         class="el-menu-vertical-demo"
         @open="handleOpen"
         @close="handleClose"
@@ -30,7 +30,11 @@
         </el-menu-item>
         <el-menu-item index="6">
           <i class="el-icon-setting" />
-          <span slot="title">3D看房</span>
+          <span slot="title">星系</span>
+        </el-menu-item>
+        <el-menu-item index="7">
+          <i class="el-icon-setting" />
+          <span slot="title">3D字体</span>
         </el-menu-item>
       </el-menu>
     </div>
@@ -71,6 +75,9 @@ export default {
           break
         case '6':
           this.$router.push('/galaxy')
+          break
+        case '7':
+          this.$router.push('/test')
           break
       }
     }

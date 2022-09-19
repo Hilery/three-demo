@@ -41,6 +41,11 @@ const routes = [
     path: '/galaxy',
     name: 'galaxy',
     component: () => import('../views/Galaxy.vue')
+  },
+  {
+    path: '/test',
+    name: 'test',
+    component: () => import('../views/Test.vue')
   }
 ]
 
