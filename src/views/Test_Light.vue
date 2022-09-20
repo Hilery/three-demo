@@ -17,10 +17,7 @@ export default {
       camera: null,
       scene: null,
       renderer: null,
-      controls: null,
-      sphere: null,
-      sphereShadow: null,
-      clock: null
+      controls: null
     }
   },
   mounted() {
@@ -36,62 +33,53 @@ export default {
       const canvas = this.$refs.webgl
       const scene = new THREE.Scene()
       this.scene = scene
-      const textureLoader = new THREE.TextureLoader()
-      const simpleShadow = textureLoader.load('/static/textures/simpleShadow.jpg')
-      console.log(simpleShadow)
       // 创建 材质
       const material = new THREE.MeshStandardMaterial()
-      material.roughness = 0.7
+      material.roughness = 0.4
       // 创建对象
-      const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), material)
-      this.sphere = sphere
-      scene.add(sphere)
-      sphere.castShadow = true
+      const sqhere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), material)
+      sqhere.position.x = -1.5
+      scene.add(sqhere)
+
+      const cube = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.75, 0.75), material)
+      const torus = new THREE.Mesh(
+        new THREE.TorusGeometry(0.3, 0.2, 32, 64),
+        material
+      )
+      torus.position.x = 1.5
 
       const plane = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), material)
       plane.rotation.x = -Math.PI * 0.5
       plane.position.y = -0.65
-      plane.receiveShadow = true
-      scene.add(plane)
+
+      scene.add(sqhere, cube, torus, plane)
 
       // 添加灯光
       // 环境光
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.3)
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
       scene.add(ambientLight)
       // 太阳光
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.3)
-      directionalLight.position.set(2, 2, -1)
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5)
+      directionalLight.position.set(1, 0.25, 0)
       scene.add(directionalLight)
 
-      // directionalLight.castShadow = true
-      directionalLight.shadow.mapSize.width = 1024
-      directionalLight.shadow.mapSize.height = 1024
+      // 渐变色光
+      const hemisphereLight = new THREE.HemisphereLight(0xff0000, 0x0000ff, 0.3)
+      scene.add(hemisphereLight)
 
-      directionalLight.shadow.camera.top = 2
-      directionalLight.shadow.camera.right = 2
-      directionalLight.shadow.camera.bottom = -2
-      directionalLight.shadow.camera.left = -2
+      // 点光源
+      const pointLight = new THREE.PointLight(0xff9000, 0.5, 0.5, 1)
+      pointLight.position.set(1, -0.5, 1)
+      scene.add(pointLight)
 
-      directionalLight.shadow.camera.near = 1
-      directionalLight.shadow.camera.far = 6
-      const directionalLightCameraHelper = new THREE.CameraHelper(
-        directionalLight.shadow.camera
-      )
-      directionalLightCameraHelper.visible = false
-      scene.add(directionalLightCameraHelper)
+      const rectAreaLight = new THREE.RectAreaLight(0x4e00ff, 2, 1, 1)
+      rectAreaLight.position.set(-1.5, 0, 1.5)
+      rectAreaLight.lookAt(new THREE.Vector3())
+      scene.add(rectAreaLight)
 
-      const sphereShadow = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.5, 1.5),
-        new THREE.MeshBasicMaterial({
-          color: 0x000000,
-          transparent: true,
-          alphaMap: simpleShadow
-        })
-      )
-      sphereShadow.rotation.x = -Math.PI * 0.5
-      sphereShadow.position.y = plane.position.y + 0.01
-      this.sphereShadow = sphereShadow
-      scene.add(sphereShadow)
+      const spotLight = new THREE.SpotLight(0x78ff00, 0.5, 10, Math.PI * 0.1, 0.25, 1)
+      spotLight.position.set(0, 2, 3)
+      scene.add(spotLight)
       // 初始化大小
       const sizes = {
         width: window.innerWidth,
@@ -120,27 +108,35 @@ export default {
       })
       renderer.setSize(sizes.width, sizes.height)
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-      renderer.shadowMap.enabled = true
       this.renderer = renderer
       // 创建控制器
       const controls = new OrbitControls(camera, canvas)
       controls.enableDamping = true
       this.controls = controls
-      this.clock = new THREE.Clock()
+
+      gui
+        .add(ambientLight, 'intensity')
+        .min(0)
+        .max(1)
+        .step(0.01)
+        .name('Ambient Light')
+      gui
+        .add(directionalLight, 'intensity')
+        .min(0)
+        .max(1)
+        .step(0.01)
+        .name('Directional Light')
+      gui
+        .add(hemisphereLight, 'intensity')
+        .min(0)
+        .max(1)
+        .step(0.01)
+        .name('Hemisphere Light')
+
       this.animate()
     },
     animate() {
       this.controls.update()
-      // Update the sphere
-      const elapsedTime = this.clock.getElapsedTime()
-      this.sphere.position.x = Math.cos(elapsedTime) * 1.2
-      this.sphere.position.z = Math.sin(elapsedTime) * 1.2
-      this.sphere.position.y = Math.abs(Math.sin(elapsedTime * 3))
-
-      this.sphereShadow.position.x = this.sphere.position.x
-      this.sphereShadow.position.z = this.sphere.position.z
-      this.sphereShadow.material.opacity = (1 - this.sphere.position.y)
-
       this.renderer.render(this.scene, this.camera)
       requestAnimationFrame(this.animate)
     }
