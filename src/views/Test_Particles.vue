@@ -16,13 +16,11 @@ export default {
       scene: null,
       renderer: null,
       controls: null,
+      sphere: null,
+      sphereShadow: null,
       clock: null,
-      object1: null,
-      object2: null,
-      object3: null,
-      objects: [],
-      raycaster: null
-
+      count: 0,
+      particlesGeometry: null
     }
   },
   mounted() {
@@ -34,33 +32,57 @@ export default {
       const gui = new dat.GUI()
       this.gui = gui
       // 雾
-      this.raycaster = new THREE.Raycaster()
+
       // 初始化场景
       // 获取canvas
       const canvas = this.$refs.webgl
       const scene = new THREE.Scene()
       this.scene = scene
 
-      const light = new THREE.AmbientLight(0xffffff, 1)
-      scene.add(light)
+      const textureLoader = new THREE.TextureLoader()
+      const normalTexture = textureLoader.load('/static/textures/particles/4.png')
 
-      const geometry = new THREE.SphereBufferGeometry(0.5, 16, 16)
-      const material = new THREE.MeshStandardMaterial()
-      material.color = new THREE.Color(0xff0000)
-      const object1 = new THREE.Mesh(geometry, material)
-      object1.position.x = -2
-      this.object1 = object1
-      scene.add(object1)
+      const particlesGeometry = new THREE.BufferGeometry()
+      this.particlesGeometry = particlesGeometry
+      const count = 20000
+      this.count = count
+      const position = new Float32Array(count * 3)
+      const colors = new Float32Array(count * 3)
 
-      const object2 = new THREE.Mesh(geometry, material)
-      this.object2 = object2
-      scene.add(object2)
+      for (let i = 0; i < count * 3; i++) {
+        position[i] = (Math.random() - 0.5) * 10
+        colors[i] = Math.random()
+      }
 
-      const object3 = new THREE.Mesh(geometry, material)
-      this.object3 = object3
-      object3.position.x = 2
-      scene.add(object3)
-      this.objects = [object1, object2, object3]
+      particlesGeometry.setAttribute('position', new THREE.BufferAttribute(position, 3))
+
+      particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+
+      const particlesMaterial = new THREE.PointsMaterial()
+      particlesMaterial.size = 0.1
+      // particlesMaterial.color = new THREE.Color('#ff88cc')
+      particlesMaterial.sizeAttenuation = true
+      particlesMaterial.transparent = true
+      // particlesMaterial.alphaText = 0.001
+      // 贴图透明  但是不会被其他透明物体遮挡
+      // particlesMaterial.depthTest = false
+      // 贴图透明 会被其他透明物体遮挡
+      particlesMaterial.depthWrite = false
+      // 遮挡后 颜色叠加
+      particlesMaterial.blending = THREE.AdditiveBlending
+      particlesMaterial.alphaMap = normalTexture
+      // 设置颜色
+      particlesMaterial.vertexColors = true
+
+      const particles = new THREE.Points(particlesGeometry, particlesMaterial)
+      scene.add(particles)
+
+      // const cube = new THREE.Mesh(
+      //   new THREE.BoxBufferGeometry(),
+      //   new THREE.MeshBasicMaterial()
+      // )
+      // scene.add(cube)
+
       // 初始化大小
       const sizes = {
         width: window.innerWidth,
@@ -80,9 +102,11 @@ export default {
         75,
         sizes.width / sizes.height,
         0.1,
-        100
+        1000
       )
-      camera.position.z = 3
+      camera.position.x = 4
+      camera.position.y = 2
+      camera.position.z = 5
       scene.add(camera)
       this.camera = camera
       // 初始化渲染器
@@ -109,24 +133,12 @@ export default {
       // Update the sphere
       const elapsedTime = this.clock.getElapsedTime()
 
-      // Update objects
-      this.object1.position.y = Math.sin(elapsedTime * 0.3) * 1.5
-      this.object2.position.y = Math.sin(elapsedTime * 0.8) * 1.5
-      this.object3.position.y = Math.sin(elapsedTime * 1.4) * 1.5
-
-      const rayOrigin = new THREE.Vector3(-3, 0, 0)
-      const rayDirection = new THREE.Vector3(1, 0, 0)
-      rayDirection.normalize()
-      this.raycaster.set(rayOrigin, rayDirection)
-      const intersects = this.raycaster.intersectObjects(this.objects)
-
-      for (const obj of this.objects) {
-        obj.material.color.set('red')
+      for (let i = 0; i < this.count; i++) {
+        const y = i * 3 + 1
+        const x = this.particlesGeometry.attributes.position.array[i * 3]
+        this.particlesGeometry.attributes.position.array[y] = Math.sin(elapsedTime + x)
       }
-
-      for (const intersect of intersects) {
-        intersect.object.material.color.set('blue')
-      }
+      this.particlesGeometry.attributes.position.needsUpdate = true
       // this.particles.rotation.y = elapsedTime * 0.2
       this.renderer.render(this.scene, this.camera)
       requestAnimationFrame(this.animate)
