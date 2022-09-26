@@ -109,7 +109,6 @@ export default {
 }
 .right {
   flex: 1;
-  height: 100%;
 }
 * {
   margin: 0;
