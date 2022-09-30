@@ -21,9 +21,6 @@ export default {
       renderer: null,
       controls: null,
       clock: null,
-      object1: null,
-      object2: null,
-      object3: null,
       objects: [],
       raycaster: null,
       mouse: null,
@@ -35,8 +32,13 @@ export default {
       previousTime: 0,
       sphereBody: null,
       world: null,
-      sphere: null
-
+      sphere: null,
+      enviromentMapTexture: null,
+      defaultMaterial: null,
+      sphereGeometry: null,
+      boxGeometry: null,
+      sphereMaterial: null,
+      hitSound: null
     }
   },
   mounted() {
@@ -44,18 +46,49 @@ export default {
   },
   methods: {
     init() {
-      console.log(CANNON)
+      const self = this
       // 初始化debug 工具
       const gui = new dat.GUI()
       this.gui = gui
-
+      const params = {
+        createSphere: () => {
+          this.createSphere(Math.random() * 0.5, {
+            x: (Math.random() - 0.5) * 3,
+            y: 3,
+            z: (Math.random() - 0.5) * 3
+          })
+        },
+        createBox: () => {
+          this.createBox(
+            Math.random(),
+            Math.random(),
+            Math.random(),
+            {
+              x: (Math.random() - 0.5) * 3,
+              y: 3,
+              z: (Math.random() - 0.5) * 3
+            })
+        },
+        reset: () => {
+          console.log(self.objects)
+          for (const object of self.objects) {
+            // console.log(object.body)
+            object.body.removeEventListener('collide', this.playHitSound)
+            self.world.removeBody(object.body)
+            self.scene.remove(object.mesh)
+          }
+        }
+      }
+      gui.add(params, 'createSphere')
+      gui.add(params, 'createBox')
+      gui.add(params, 'reset')
       this.raycaster = new THREE.Raycaster()
       // 初始化场景
       // 获取canvas
       const canvas = this.$refs.webgl
       const scene = new THREE.Scene()
       this.scene = scene
-
+      this.hitSound = new Audio('/static/sounds/hit.mp3')
       const textureLoader = new THREE.TextureLoader()
       const cubeTextureLoader = new THREE.CubeTextureLoader()
 
@@ -67,8 +100,11 @@ export default {
         '/static/textures/environmentMaps/0/pz.jpg',
         '/static/textures/environmentMaps/0/nz.jpg'
       ])
+      this.enviromentMapTexture = enviromentMapTexture
       // 物理效果
       const world = new CANNON.World()
+      world.broadphase = new CANNON.SAPBroadphase(world)
+      world.allowSleep = true
       world.gravity.set(0, -9.82, 0)
       this.world = world
       const defaultMaterial = new CANNON.Material('default')
@@ -80,6 +116,7 @@ export default {
           restitution: 0.7
         }
       )
+      this.defaultMaterial = defaultMaterial
       world.addContactMaterial(defaultContactMaterial)
       world.defaultContactMaterial = defaultContactMaterial
 
@@ -92,19 +129,26 @@ export default {
       this.sphereBody = sphereBody
       world.addBody(sphereBody)
 
-      const sphere = new THREE.Mesh(
-        new THREE.SphereBufferGeometry(0.5, 64, 64),
-        new THREE.MeshStandardMaterial({
-          metalness: 0.3,
-          roughness: 0.4,
-          envMap: enviromentMapTexture
-        })
-      )
+      const sphereGeometry = new THREE.SphereBufferGeometry(0.5, 64, 64)
+      const boxGeometry = new THREE.BoxBufferGeometry(1, 1, 1)
+      const sphereMaterial = new THREE.MeshStandardMaterial({
+        metalness: 0.3,
+        roughness: 0.4,
+        envMap: enviromentMapTexture
+      })
+      this.sphereGeometry = sphereGeometry
+      this.boxGeometry = boxGeometry
+      this.sphereMaterial = sphereMaterial
+      const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial)
       sphere.castShadow = true
       sphere.position.y = 0.5
       this.sphere = sphere
       scene.add(sphere)
-
+      this.objects.push({
+        mesh: sphere,
+        body: sphereBody
+      })
+      sphereBody.addEventListener('collide', this.playHitSound)
       const floorShape = new CANNON.Plane()
       const floorBody = new CANNON.Body({
         mass: 0,
@@ -165,6 +209,7 @@ export default {
       this.camera = camera
 
       scene.add(camera)
+
       // 初始化渲染器
       const renderer = new THREE.WebGLRenderer({
         canvas: canvas,
@@ -174,7 +219,7 @@ export default {
       renderer.setSize(sizes.width, sizes.height)
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
       renderer.shadowMap.enabled = true
-      // renderer.shadowMap.type = THREE.PCFSoftShadowMap
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap
       // renderer.setClearColor('#262837')
       this.renderer = renderer
       // 创建控制器
@@ -186,6 +231,64 @@ export default {
 
       this.animate()
     },
+    createSphere(radius, position) {
+      const mesh = new THREE.Mesh(
+        this.sphereGeometry,
+        this.sphereMaterial
+      )
+      mesh.scale.set(radius, radius, radius)
+      mesh.castShadow = true
+      mesh.position.copy(position)
+      this.scene.add(mesh)
+
+      const shape = new CANNON.Sphere(radius)
+      const body = new CANNON.Body({
+        mass: 1,
+        position: new CANNON.Vec3(0, 3, 0),
+        shape: shape,
+        material: this.defaultMaterial
+      })
+      body.position.copy(position)
+      this.world.addBody(body)
+      body.addEventListener('collide', this.playHitSound)
+      this.objects.push({
+        mesh: mesh,
+        body: body
+      })
+    },
+    createBox(width, height, deep, position) {
+      const mesh = new THREE.Mesh(
+        this.boxGeometry,
+        this.sphereMaterial
+      )
+      mesh.scale.set(width, height, deep)
+      mesh.castShadow = true
+      mesh.position.copy(position)
+      this.scene.add(mesh)
+
+      const shape = new CANNON.Box(new CANNON.Vec3(width * 0.5, height * 0.5, deep * 0.5))
+      const body = new CANNON.Body({
+        mass: 1,
+        position: new CANNON.Vec3(0, 3, 0),
+        shape: shape,
+        material: this.defaultMaterial
+      })
+      body.position.copy(position)
+      this.world.addBody(body)
+      body.addEventListener('collide', this.playHitSound)
+      this.objects.push({
+        mesh: mesh,
+        body: body
+      })
+    },
+    playHitSound(collision) {
+      const impactStrength = collision.contact.getImpactVelocityAlongNormal()
+      if (impactStrength > 1.5) {
+        console.log(collision.contact.getImpactVelocityAlongNormal())
+        this.hitSound.currentTime = 0
+        this.hitSound.play()
+      }
+    },
     animate() {
       // this.controls.update()
       // Update the sphere
@@ -193,8 +296,13 @@ export default {
       const deltaTime = elapsedTime - this.previousTime
       this.previousTime = elapsedTime
 
+      // this.sphereBody.applyLocalForce(new CANNON.Vec3(0.5, 0, 0), new CANNON.Vec3(0, 0, 0))
+
       this.world.step(1 / 60, deltaTime, 3)
-      this.sphere.position.copy(this.sphereBody.position)
+      for (const object of this.objects) {
+        object.mesh.position.copy(object.body.position)
+        object.mesh.quaternion.copy(object.body.quaternion)
+      }
       this.renderer.render(this.scene, this.camera)
       requestAnimationFrame(this.animate)
     }
@@ -209,32 +317,4 @@ export default {
     padding: 0;
 }
 
-.webgl
-{
-    position: fixed;
-    top: 0;
-    left: 200px;
-    z-index: 1;
-    outline: none;
-}.section
-{
-    display: flex;
-    align-items: center;
-    height: 100vh;
-    position: relative;
-    font-family: 'Cabin', sans-serif;
-    color: #ffeded;
-    text-transform: uppercase;
-    font-size: 7vmin;
-    padding-left: 10%;
-    padding-right: 10%;
-}
-.bg
-{
-    background: #1e1a20
-}
-section:nth-child(odd)
-{
-    justify-content: flex-end;
-}
 </style>
