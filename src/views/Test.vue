@@ -13,6 +13,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import * as dat from 'dat.gui'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
+import { BasisTextureLoader } from 'three/examples/jsm/loaders/BasisTextureLoader.js'
 export default {
   data() {
     return {
@@ -25,7 +26,8 @@ export default {
       floor: null,
       floorGeometry: null,
       floorMaterial: null,
-      mixer: null
+      mixer: null,
+      treesTexture: null
     }
   },
   mounted() {
@@ -43,34 +45,222 @@ export default {
       const canvas = this.$refs.webgl
       const scene = new THREE.Scene()
       this.scene = scene
-
+      const renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        antialias: true
+        // alpha: true // this helps to have a transparent background. by default alpha: 0
+      })
       const textureLoader = new THREE.TextureLoader()
-      const cubeTextureLoader = new THREE.CubeTextureLoader()
+      const decalDiffuse = textureLoader.load(
+        '/textures/decal/decal-diffuse.png'
+      )
+      decalDiffuse.needsUpdate = true
+      console.log(decalDiffuse, 'decalDiffuse')
+      const basisLoader = new BasisTextureLoader()
+      basisLoader.setTranscoderPath('/basis/')
+      basisLoader.detectSupport(renderer)
+      // basisLoader.load('/static/imgs/port/state0_base.basis', function(texture) {
+      //   // const material = new THREE.MeshStandardMaterial({ map: texture })
+      //   console.log(texture)
+      // }, function() {
+      //   console.log('onProgress')
+      // }, function(e) {
+      //   console.error(e)
+      // })
+      const groundTexture = basisLoader.load('/static/imgs/port/state0_base.basis')
+      groundTexture.flipY = false
+      groundTexture.encoding = THREE.sRGBEncoding
+      const buildingsTexture = basisLoader.load('/static/imgs/port/state0_env_buildings.basis')
+      buildingsTexture.flipY = false
+      buildingsTexture.encoding = THREE.sRGBEncoding
+      const treesTexture = basisLoader.load('/static/imgs/port/state0_trees_etc.basis')
+      treesTexture.flipY = false
+      treesTexture.encoding = THREE.sRGBEncoding
+      const housesTexture = basisLoader.load('/static/imgs/port/state0_retail_houses.basis')
+      housesTexture.flipY = false
+      housesTexture.encoding = THREE.sRGBEncoding
+      const state1texture = basisLoader.load('/static/imgs/port/state1.basis')
+      state1texture.flipY = false
+      state1texture.encoding = THREE.sRGBEncoding
+      const state2texture = basisLoader.load('/static/imgs/port/state2.basis')
+      state2texture.flipY = false
+      state2texture.encoding = THREE.sRGBEncoding
+      const state3texture = basisLoader.load('/static/imgs/port/state3.basis')
+      state3texture.flipY = false
+      state3texture.encoding = THREE.sRGBEncoding
+      const state4texture = basisLoader.load('/static/imgs/port/state4.basis')
+      state4texture.flipY = false
+      state4texture.encoding = THREE.sRGBEncoding
 
       const dracoLoader = new DRACOLoader()
       dracoLoader.setDecoderPath('/draco/')
 
       const gltfloader = new GLTFLoader()
-      gltfloader.setDRACOLoader(dracoLoader)
+      const group = new THREE.Group()
+
+      // gltfloader.setDRACOLoader(dracoLoader)
       gltfloader.load(
         // '/static/model/Duck/glTF/Duck.gltf',
         // '/static/model/Duck/glTF-Embedded/Duck.gltf',
         // '/static/model/FlightHelmet/glTF/FlightHelmet.gltf',
-        '/static/model/Fox/glTF/Fox.gltf',
+        '/static/model/port/state0_opti.glb',
         (gltf) => {
-          console.log('加载成功', gltf)
+          console.log('加载成功', gltf.scene)
+
           // while (gltf.scene.children.length) {
           //   scene.add(gltf.scene.children[0])
           // }
-          // const children = [...gltf.scene.children]
-          // for (const object of children) {
-          //   scene.add(object)
-          // }
-          self.mixer = new THREE.AnimationMixer(gltf.scene)
-          const action = self.mixer.clipAction(gltf.animations[2])
-          action.play()
-          gltf.scene.scale.set(0.025, 0.025, 0.025)
-          scene.add(gltf.scene)
+          const group = new THREE.Group()
+          // const final_bake_check = gltf.scene.children[0]
+          // group.position = final_bake_check.position
+          // group.rotation = final_bake_check.rotation
+          group.rotation.copy(gltf.scene.children[0].rotation)
+          const childrens = gltf.scene.children[0].children
+          for (const object of childrens) {
+            const geometry = object.geometry
+            const material = new THREE.MeshBasicMaterial({
+            })
+            if (object.name == 'state0_base1') {
+              material.map = groundTexture
+            }
+            if (object.name == 'state0_env_buildings') {
+              material.map = buildingsTexture
+            } else if (object.name == 'state0_trees_etcext1') {
+              material.map = buildingsTexture
+            } else if (object.name == 'state0_retail_houses1') {
+              material.map = housesTexture
+            }
+            const mesh = new THREE.Mesh(geometry, material)
+            mesh.position.copy(object.position)
+            mesh.rotation.copy(object.rotation)
+            mesh.scale.copy(object.scale)
+            group.add(mesh)
+            console.log(object)
+          }
+          console.log(gltf.scene)
+
+          console.log(group)
+          scene.add(group)
+        },
+        (xhr) => {
+          console.log((xhr.loaded / xhr.total * 100) + '% loaded')
+        },
+        () => {
+          console.log('加载失败')
+        }
+      )
+      gltfloader.load(
+        '/static/model/port/state1_opti.glb',
+        (gltf) => {
+          console.log('加载成功1', gltf.scene)
+          const group = new THREE.Group()
+          group.rotation.copy(gltf.scene.children[0].rotation)
+          const childrens = gltf.scene.children[0].children
+          for (const object of childrens) {
+            const geometry = object.geometry
+            const material = new THREE.MeshBasicMaterial({
+              map: state1texture
+            })
+            const mesh = new THREE.Mesh(geometry, material)
+            mesh.position.copy(object.position)
+            mesh.rotation.copy(object.rotation)
+            mesh.scale.copy(object.scale)
+            group.add(mesh)
+          }
+          scene.add(group)
+        },
+        (xhr) => {
+          console.log((xhr.loaded / xhr.total * 100) + '% loaded')
+        },
+        () => {
+          console.log('加载失败')
+        }
+      )
+      gltfloader.load(
+        '/static/model/port/state2.glb',
+        (gltf) => {
+          console.log('加载成功2', gltf.scene)
+          const group = new THREE.Group()
+          group.rotation.copy(gltf.scene.children[0].rotation)
+          const childrens = gltf.scene.children[0].children
+          for (const object of childrens) {
+            const geometry = object.geometry
+            const material = new THREE.MeshBasicMaterial({
+              map: state2texture
+            })
+            const mesh = new THREE.Mesh(geometry, material)
+            mesh.position.copy(object.position)
+            mesh.rotation.copy(object.rotation)
+            mesh.scale.copy(object.scale)
+            group.add(mesh)
+          }
+          scene.add(group)
+        },
+        (xhr) => {
+          console.log((xhr.loaded / xhr.total * 100) + '% loaded')
+        },
+        () => {
+          console.log('加载失败')
+        }
+      )
+      gltfloader.load(
+        '/static/model/port/state3.glb',
+        (gltf) => {
+          console.log('加载成功', gltf.scene)
+          const group = new THREE.Group()
+          group.rotation.copy(gltf.scene.children[0].rotation)
+          const childrens = gltf.scene.children[0].children
+          for (const object of childrens) {
+            const geometry = object.geometry
+            const material = new THREE.MeshBasicMaterial({
+              map: state3texture
+            })
+            const mesh = new THREE.Mesh(geometry, material)
+            mesh.position.copy(object.position)
+            mesh.rotation.copy(object.rotation)
+            mesh.scale.copy(object.scale)
+            group.add(mesh)
+          }
+          scene.add(group)
+        },
+        (xhr) => {
+          console.log((xhr.loaded / xhr.total * 100) + '% loaded')
+        },
+        () => {
+          console.log('加载失败')
+        }
+      )
+      gltfloader.load(
+        '/static/model/port/state4_opti.glb',
+        (gltf) => {
+          console.log('加载成功1', gltf.scene)
+          const group = new THREE.Group()
+          group.rotation.copy(gltf.scene.rotation)
+          const childrens = gltf.scene.children
+          for (const object of childrens) {
+            if (object.name == 'state4logo') {
+              const geometry = object.geometry
+              const material = new THREE.MeshBasicMaterial({
+                color: '#4247e1'
+              })
+              const mesh = new THREE.Mesh(geometry, material)
+              mesh.position.copy(object.position)
+              mesh.rotation.copy(object.rotation)
+              mesh.scale.copy(object.scale)
+              group.add(mesh)
+            } else if (object.name == 'state4') {
+              const geometry = object.geometry
+              const material = new THREE.MeshBasicMaterial({
+                map: state4texture
+              })
+              const mesh = new THREE.Mesh(geometry, material)
+              mesh.position.copy(object.position)
+              mesh.rotation.copy(object.rotation)
+              mesh.scale.copy(object.scale)
+              group.add(mesh)
+            }
+          }
+          scene.add(group)
         },
         (xhr) => {
           console.log((xhr.loaded / xhr.total * 100) + '% loaded')
@@ -89,16 +279,10 @@ export default {
       /**
  * Lights
  */
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8)
+      const ambientLight = new THREE.AmbientLight(0xffffff, 1)
 
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6)
-      directionalLight.castShadow = true
-      directionalLight.shadow.mapSize.set(1024, 1024)
-      directionalLight.shadow.camera.far = 15
-      directionalLight.shadow.camera.left = -7
-      directionalLight.shadow.camera.top = 7
-      directionalLight.shadow.camera.right = 7
-      directionalLight.shadow.camera.bottom = -7
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
+
       directionalLight.position.set(5, 5, 5)
 
       scene.add(ambientLight, directionalLight)
@@ -112,23 +296,19 @@ export default {
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
       })
       // 初始化相机
-      const camera = new THREE.PerspectiveCamera(75,
+      const camera = new THREE.PerspectiveCamera(55,
         sizes.width / sizes.height,
         0.1,
-        100
+        1000
       )
-      camera.position.set(2, 2, 2)
+      camera.position.set(1, 0.5, 1)
 
       this.camera = camera
 
       scene.add(camera)
 
       // 初始化渲染器
-      const renderer = new THREE.WebGLRenderer({
-        canvas: canvas,
-        antialias: true
-        // alpha: true // this helps to have a transparent background. by default alpha: 0
-      })
+
       renderer.setSize(sizes.width, sizes.height)
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
       renderer.shadowMap.enabled = true
@@ -158,9 +338,8 @@ export default {
       const floorGeometry = new THREE.PlaneGeometry(10, 10)
 
       const floorMaterial = new THREE.MeshStandardMaterial({
-        color: '#444444',
-        metalness: 0,
-        roughness: 0.5,
+        color: '#366fb9',
+        opacity: 0.7,
         transparent: true
       })
 
