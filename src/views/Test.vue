@@ -33,7 +33,9 @@ export default {
       logoMesh: null,
       cloud3Mesh: null,
       cloud2Mesh: null,
-      cloud1Mesh: null
+      cloud1Mesh: null,
+      basisLoader: null,
+      waterMesh: null
     }
   },
   mounted() {
@@ -53,6 +55,8 @@ export default {
       scene.background = new THREE.Color('#366fb9')
       this.scene = scene
       const fog = new THREE.Fog('#ffffff', 3.6, 4.1)
+      fog.near = 0.1
+      fog.far = 3.6
       scene.fog = fog
 
       const renderer = new THREE.WebGLRenderer({
@@ -88,6 +92,7 @@ export default {
       const basisLoader = new BasisTextureLoader()
       basisLoader.setTranscoderPath('/basis/')
       basisLoader.detectSupport(renderer)
+      this.basisLoader = basisLoader
       const groundTexture = basisLoader.load('/static/imgs/port/state0_base.basis')
       groundTexture.flipY = false
       groundTexture.encoding = THREE.sRGBEncoding
@@ -166,8 +171,7 @@ export default {
 
       const fbxLoader = new FBXLoader()
       const fbxGroup = new THREE.Group()
-      fbxGroup.position.set(0, -0.00015, 0)
-      fbxGroup.scale.set(1, 1, -1)
+
       fbxLoader.load(
         '/static/model/port/vehicles.fbx',
         (object) => {
@@ -195,10 +199,10 @@ export default {
             } else if (child.name.toLowerCase().includes('container')) {
               child.material = containerMaterial
             }
-            fbxGroup.add(child)
           }
-          console.log('222', fbxGroup)
-          scene.add(fbxGroup)
+          object.position.set(0, -0.00015, 0)
+          object.scale.set(1, 1, -1)
+          scene.add(object)
         }
 
       )
@@ -469,12 +473,13 @@ export default {
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
       })
       // 初始化相机
-      const camera = new THREE.PerspectiveCamera(55,
+      const camera = new THREE.PerspectiveCamera(35,
         sizes.width / sizes.height,
         0.1,
-        1000
+        10
       )
-      camera.position.set(1, 1, 0)
+      camera.position.set(0.8, 0.5, -1.42)
+      camera.lookAt(0, 0, 0)
 
       this.camera = camera
 
@@ -495,6 +500,7 @@ export default {
       this.controls = controls
       this.clock = new THREE.Clock()
       this.addFloor()
+      this.createWater()
       this.animate()
     },
     removeFloor() {
@@ -566,7 +572,74 @@ export default {
       return clouds
     },
     createWater() {
+      // 加载纹理贴图
+      const noise = this.basisLoader.load('/static/imgs/port/noise.basis')
+      noise.wrapS = noise.wrapT = THREE.RepeatWrapping
+      const vertexShader = `
+        uniform float uTime;
+        uniform sampler2D uNoiseTexture;
+        uniform float uFrequency;
+        uniform float uAmplitude;
+        uniform float uSpeed;
 
+        varying vec2 vUv;
+        varying float vNoise;
+
+        void main() {
+          vUv = uv;
+          vec3 pos = position;
+          pos.z += texture2D(uNoiseTexture,uv * uFrequency + (uTime * uSpeed)).r * uAmplitude;
+
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+        }
+      `
+      const fragmentShader = `
+      uniform vec3 uColor;
+      uniform float uOpacity;
+
+      varying vec2 vUv;
+
+      void main() {
+        gl_FragColor = vec4(uColor,uOpacity);
+      }`
+      const water = {
+        frequency: {
+          value: 3,
+          step: 1
+        },
+        speed: {
+          value: 0.015
+        },
+        amplitude: {
+          value: 0.45
+        }
+      }
+      const uniforms = {
+        uColor: { value: new THREE.Color(0x366fb9) },
+        uOpacity: { value: 0.7 },
+        uTime: { value: 0 },
+        uNoiseTexture: { value: noise },
+        uFrequency: { value: water.frequency.value },
+        uSpeed: { value: water.speed.value },
+        uAmplitude: { value: water.amplitude.value / 100 }
+      }
+
+      const waterGeometry = new THREE.PlaneBufferGeometry(1, 1, 200, 200)
+      const waterMaterial = new THREE.ShaderMaterial({
+        uniforms: uniforms,
+        vertexShader: vertexShader,
+        fragmentShader: fragmentShader,
+        transparent: true,
+        color: 0x366fb9
+      })
+      const waterMesh = new THREE.Mesh(waterGeometry, waterMaterial)
+      this.waterMesh = waterMesh
+      const group = new THREE.Group()
+      group.scale.set(1.75, 1.75, 1)
+      group.position.set(0.3, 0.0085, -0.3)
+      group.rotation.set(-Math.PI / 2, 0, 0)
+      group.add(waterMesh)
+      this.scene.add(group)
     },
     animate() {
       // this.controls.update()
@@ -585,6 +658,7 @@ export default {
       if (this.cloud1Mesh) this.cloud1Mesh.material.uniforms.uTime.value = elapsedTime
       if (this.cloud2Mesh) this.cloud2Mesh.material.uniforms.uTime.value = elapsedTime
       if (this.cloud3Mesh) this.cloud3Mesh.material.uniforms.uTime.value = elapsedTime
+      if (this.waterMesh) this.waterMesh.material.uniforms.uTime.value = elapsedTime
       this.renderer.render(this.scene, this.camera)
       requestAnimationFrame(this.animate)
     }
