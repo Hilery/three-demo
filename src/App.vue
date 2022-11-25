@@ -40,6 +40,10 @@
           <i class="el-icon-setting" />
           <span slot="title">3D字体</span>
         </el-menu-item>
+        <el-menu-item index="9">
+          <i class="el-icon-setting" />
+          <span slot="title">3D工厂</span>
+        </el-menu-item>
       </el-menu>
     </div>
     <div class="right">
@@ -85,6 +89,9 @@ export default {
           break
         case '8':
           this.$router.push('/test')
+          break
+        case '9':
+          this.$router.push('/factory')
           break
       }
     }

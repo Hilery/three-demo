@@ -51,6 +51,11 @@ const routes = [
     path: '/haunted',
     name: 'haunted',
     component: () => import('../views/HauntedHouse.vue')
+  },
+  {
+    path: '/factory',
+    name: 'factory',
+    component: () => import('../views/Test_Factory.vue')
   }
 ]
 
