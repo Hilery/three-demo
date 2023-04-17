@@ -111,7 +111,29 @@ export default {
 
         gltf.scene.traverse((child) => {
           if (child.isObject3D && child.isMesh) {
-            if (child.name === 'Obj3d66-725752-19-546' || child.name === 'Obj3d66-725752-13-367') {
+            if (child.name === 'Obj3d66-725752-179-298') {
+              const texture = this.loader.load('/model/oil/3d66Model-725752-files-5.jpg')
+              texture.flipY = false
+              texture.encoding = THREE.sRGBEncoding
+              const material = new THREE.MeshStandardMaterial({
+                map: texture,
+                roughness: 0.5,
+                metalness: 0.5
+                // specularMap: this.frontSTexture
+              })
+              child.material = material
+            } else if (child.name === 'Obj3d66-725752-16-808' || child.name === 'Obj3d66-725752-20-602') {
+              const texture = this.loader.load('/model/oil/3d66Model-725752-files-7.jpg')
+              texture.flipY = false
+              texture.encoding = THREE.sRGBEncoding
+              const material = new THREE.MeshStandardMaterial({
+                map: texture,
+                roughness: 0.5,
+                metalness: 0.5
+                // specularMap: this.frontSTexture
+              })
+              child.material = material
+            } else if (child.name === 'Obj3d66-725752-19-546' || child.name === 'Obj3d66-725752-13-367') {
               console.log(child)
               const texture = this.loader.load('/model/oil/3d66Model-725752-files-3.jpg')
               texture.flipY = false
@@ -124,8 +146,7 @@ export default {
               })
               child.material = material
             }
-          }
-          if (child.name === 'Obj3d66-725752-25-709' || child.name === 'Obj3d66-725752-5-201') {
+          } else if (child.name === 'Obj3d66-725752-25-709' || child.name === 'Obj3d66-725752-5-201') {
             console.log(child)
             const material = new THREE.MeshStandardMaterial({
 
