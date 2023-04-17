@@ -1,8 +1,6 @@
 <template>
   <div>
-    <div class="bg">
-      <canvas id="webgl" ref="webgl" class="webgl" canvas-id="canvasId" />
-    </div>
+    <div id="webgl" ref="webgl" class="webgl" canvas-id="canvasId" />
 
   </div>
 </template>
@@ -10,9 +8,11 @@
 <script>
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-import * as dat from 'dat.gui'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
-
+// 解压库 dracoloader
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
+// 引入室内环境
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment'
 export default {
   data() {
     return {
@@ -20,7 +20,14 @@ export default {
       camera: null,
       scene: null,
       renderer: null,
-      controls: null
+      controls: null,
+      debuggerObj: {},
+      mixer: null,
+      previousTime: 0,
+      clock: new THREE.Clock(),
+      model: null,
+      frontTexture: null,
+      frontSTexture: null
     }
   },
   mounted() {
@@ -28,132 +35,134 @@ export default {
   },
   methods: {
     init() {
-      const self = this
-      // 初始化debug 工具
-      const gui = new dat.GUI()
-      this.gui = gui
+      this.initThree()
+      this.initMap()
+      this.initCamera()
+      this.initScene()
+      this.initLight()
+      this.initObject()
+      this.initControls()
+      this.render()
+    },
+    initMap() {
+      const loader = new THREE.TextureLoader()
+      const frontTexture = loader.load('/model/oil/3d66Model-725752-files-6.jpg')
 
-      // 初始化场景
-      // 获取canvas
-      const canvas = this.$refs.webgl
-      const scene = new THREE.Scene()
-      // scene.background = new THREE.Color('#366fb9')
-      this.scene = scene
+      const frontSTexture = loader.load('/model/oil/3d66Model-725752-files-2.jpg')
 
-      const renderer = new THREE.WebGLRenderer({
-        canvas: canvas,
+      frontTexture.wrapS = THREE.RepeatWrapping
+      frontTexture.wrapT = THREE.RepeatWrapping
+      frontTexture.encoding = THREE.sRGBEncoding
+      frontTexture.flipY = false
+
+      frontSTexture.wrapS = THREE.RepeatWrapping
+      frontSTexture.wrapT = THREE.RepeatWrapping
+      frontSTexture.encoding = THREE.sRGBEncoding
+      frontSTexture.flipY = false
+
+      this.frontTexture = frontTexture
+      this.frontSTexture = frontSTexture
+
+      this.loader = loader
+    },
+    initThree() {
+      const width = document.documentElement.clientWidth
+      const height = document.documentElement.clientHeight
+      this.renderer = new THREE.WebGLRenderer({
         antialias: true
-        // alpha: true // this helps to have a transparent background. by default alpha: 0
       })
 
-      // envarimentmap
-      const cubeTextureLoader = new THREE.CubeTextureLoader()
-      const envMap = cubeTextureLoader.load([
-        '/textures/environmentMaps/0/px.jpg',
-        '/textures/environmentMaps/0/nx.jpg',
-        '/textures/environmentMaps/0/py.jpg',
-        '/textures/environmentMaps/0/ny.jpg',
-        '/textures/environmentMaps/0/pz.jpg',
-        '/textures/environmentMaps/0/nz.jpg'
-      ])
-      scene.background = envMap
+      this.renderer.setSize(width, height)
+      this.renderer.shadowMap.enabled = true
+      this.$refs.webgl.appendChild(this.renderer.domElement)
+    },
+    initCamera() {
+      this.camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 1000)
+      this.camera.position.set(0, 5, 10)
+    },
+    initScene() {
+      const pmremGenerator = new THREE.PMREMGenerator(this.renderer)
+      this.scene = new THREE.Scene()
+      this.scene.background = new THREE.Color(0xbfe3dd)
+      this.scene.environment = pmremGenerator.fromScene(
+        new RoomEnvironment(),
+        0.04
+      ).texture
+    },
+    initLight() {
+      const light = new THREE.DirectionalLight(0xffffff, 0.5)
+      light.position.set(10, 10, 0)
+      this.scene.add(light)
 
-      // const testSphere = new THREE.Mesh(
-      //   new THREE.SphereBufferGeometry(1, 32, 32),
-      //   new THREE.MeshStandardMaterial()
-      // )
-      // scene.add(testSphere)
-      // 初始化大小
-      const sizes = {
-        width: window.innerWidth,
-        height: window.innerHeight
-      }
-      this.size = sizes
-      /**
-      * gltf
-      */
+      // 创建环境光
+      const ambient = new THREE.AmbientLight(0xffffff, 0.5)
+      this.scene.add(ambient)
+    },
+    initObject() {
+      const glbloader = new GLTFLoader()
+      // 实例化解压库
+      const dracoLoader = new DRACOLoader()
+      // 设置解压库js路径
+      dracoLoader.setDecoderPath('/draco/')
+      // 设置解压库为gltf载入库的解压库
+      glbloader.setDRACOLoader(dracoLoader)
+      glbloader.load('/model/oil/test.gltf', (gltf) => {
+        console.log(gltf)
 
-      const gltfLoader = new GLTFLoader()
-      gltfLoader.load(
-        '/model/hamburger.glb',
-        (gltf) => {
-          console.log(gltf)
-          const root = gltf.scene
-          root.scale.set(0.25, 0.25, 0.25)
+        gltf.scene.traverse((child) => {
+          if (child.isObject3D && child.isMesh) {
+            if (child.name === 'Obj3d66-725752-19-546' || child.name === 'Obj3d66-725752-13-367') {
+              console.log(child)
+              const texture = this.loader.load('/model/oil/3d66Model-725752-files-3.jpg')
+              texture.flipY = false
+              texture.encoding = THREE.sRGBEncoding
+              const material = new THREE.MeshStandardMaterial({
+                map: texture,
+                roughness: 0.5,
+                metalness: 0.5
+                // specularMap: this.frontSTexture
+              })
+              child.material = material
+            }
+          }
+          if (child.name === 'Obj3d66-725752-25-709' || child.name === 'Obj3d66-725752-5-201') {
+            console.log(child)
+            const material = new THREE.MeshStandardMaterial({
 
-          scene.add(root)
-        }
-      )
+              map: this.frontTexture
 
-      // gltfLoader.load(
-      //   '/model/FlightHelmet/glTF/FlightHelmet.gltf',
-      //   (gltf) => {
-      //     console.log(gltf)
-      //     const root = gltf.scene
-      //     root.position.set(0, -4, 0)
-      //     root.rotation.y = Math.PI * 0.75
-      //     root.scale.set(4, 4, 4)
-      //     gui.add(root.rotation, 'y').min(-Math.PI).max(Math.PI).step(0.001).name('rotation')
-      //     scene.add(root)
-      //   }
-      // )
+              // specularMap: this.frontSTexture
+            })
+            child.material = material
+            child.material.needsUpdate = true
+            child.material.map = this.frontTexture
+            child.material.map.wrapS = THREE.RepeatWrapping
+            child.material.map.wrapT = THREE.RepeatWrapping
+          }
+        })
 
-      /**
-      * Lights
-      */
-
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
-
-      directionalLight.position.set(0.25, 3, -2.25)
-
-      gui.add(directionalLight, 'intensity').min(0).max(10).step(0.001).name('intensity')
-      gui.add(directionalLight.position, 'x').min(-5).max(5).step(0.001).name('x')
-      gui.add(directionalLight.position, 'y').min(-5).max(5).step(0.001).name('y')
-      gui.add(directionalLight.position, 'z').min(-5).max(5).step(0.001).name('z')
-      scene.add(directionalLight)
-      // 监听屏幕大小
-      window.addEventListener('resize', () => {
-        sizes.width = window.innerWidth
-        sizes.height = window.innerHeight
-        camera.aspect = sizes.width / sizes.height
-        camera.updateProjectionMatrix()
-        renderer.setSize(sizes.width, sizes.height)
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+        this.scene.add(gltf.scene)
+        this.camera.lookAt(gltf.scene.position)
       })
-      // 初始化相机
-      const camera = new THREE.PerspectiveCamera(75,
-        sizes.width / sizes.height,
-        0.1,
-        1000
-      )
-      camera.position.set(4, 1, -4)
-      this.camera = camera
+    },
+    initControls() {
+      this.controls = new OrbitControls(this.camera, this.renderer.domElement)
+    },
+    render() {
+      requestAnimationFrame(this.render)
+      const elapsedTime = this.clock.getElapsedTime()
+      const delta = elapsedTime - this.previousTime
+      this.previousTime = elapsedTime
 
-      scene.add(camera)
-
-      // 初始化渲染器
-
-      renderer.setSize(sizes.width, sizes.height)
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-      renderer.shadowMap.enabled = true
-      renderer.physicallyCorrectLights = true
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap
-      renderer.outputEncoding = THREE.sRGBEncoding
-      // renderer.setClearColor('#262837')
-      this.renderer = renderer
-      // 创建控制器
-      const controls = new OrbitControls(camera, canvas)
-      controls.enableDamping = true
-
-      this.controls = controls
-      this.animate()
+      this.controls.update()
+      this.renderer.render(this.scene, this.camera)
     },
 
+    updateAllMeterial() {
+
+    },
     animate() {
-      this.controls.update()
-      // Update the sphere
-      this.renderer.render(this.scene, this.camera)
-      requestAnimationFrame(this.animate)
+
     }
   }
 }
