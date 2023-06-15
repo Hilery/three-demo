@@ -13,6 +13,9 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 // 引入室内环境
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment'
+// 导入rgbeloader
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader'
+import * as dat from 'dat.gui'
 export default {
   data() {
     return {
@@ -36,6 +39,7 @@ export default {
   methods: {
     init() {
       this.initThree()
+      this.addGui()
       this.initMap()
       this.initCamera()
       this.initScene()
@@ -43,6 +47,9 @@ export default {
       this.initObject()
       this.initControls()
       this.render()
+    },
+    addGui() {
+      this.gui = new dat.GUI()
     },
     initMap() {
       const loader = new THREE.TextureLoader()
@@ -73,29 +80,60 @@ export default {
       })
 
       this.renderer.setSize(width, height)
-      this.renderer.shadowMap.enabled = true
+      // this.renderer.shadowMap.enabled = true
       this.$refs.webgl.appendChild(this.renderer.domElement)
     },
     initCamera() {
-      this.camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 1000)
-      this.camera.position.set(0, 5, 10)
+      this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000)
+      // 设置相机位置 -50,50,130
+      this.camera.position.set(0, 10, 50)
+      // 更新摄像头宽高比例
+      this.camera.aspect = window.innerWidth / window.innerHeight
+      // 更新摄像头投影矩阵
+      this.camera.updateProjectionMatrix()
     },
     initScene() {
+      // 3d66Model-1625299-files-26.hdr
       const pmremGenerator = new THREE.PMREMGenerator(this.renderer)
       this.scene = new THREE.Scene()
       this.scene.background = new THREE.Color(0xbfe3dd)
       this.scene.environment = pmremGenerator.fromScene(
         new RoomEnvironment(),
-        0.04
+        0.1
       ).texture
+      // const hdrLoader = new RGBELoader()
+      // hdrLoader.loadAsync('/model/oil/3d66Model-1625299-files-26.hdr').then((texture) => {
+      //   const skyGeometry = new THREE.SphereGeometry(1000, 60, 60)
+      //   const skyMaterial = new THREE.MeshBasicMaterial({
+      //     map: texture
+      //   })
+      //   skyGeometry.scale(1, 1, -1)
+      //   const sky = new THREE.Mesh(skyGeometry, skyMaterial)
+      //   this.scene.add(sky)
+      // })
     },
     initLight() {
-      const light = new THREE.DirectionalLight(0xffffff, 0.5)
-      light.position.set(10, 10, 0)
+      const light = new THREE.DirectionalLight(0xffffff, 0.06)
+      light.position.set(-100, 100, 100)
+
+      const parameters = {
+        materialColor: '#ffeded',
+        intensity: 0.02
+      }
+      this.gui.addColor(parameters, 'materialColor').onChange((color) => {
+        light.color.set(color)
+      })
+      this.gui.add(parameters, 'intensity', 0, 2).onChange((intensity) => {
+        light.intensity = intensity
+      })
+      this.gui.add(light.position, 'x', 0, 20, 1)
+      this.gui.add(light.position, 'y', 0, 20, 1)
+      this.gui.add(light.position, 'z', 0, 20, 1)
+
       this.scene.add(light)
 
-      // 创建环境光
-      const ambient = new THREE.AmbientLight(0xffffff, 0.5)
+      // // 创建环境光
+      const ambient = new THREE.AmbientLight(0xffffff, 0.2)
       this.scene.add(ambient)
     },
     initObject() {
@@ -161,9 +199,101 @@ export default {
             child.material.map.wrapT = THREE.RepeatWrapping
           }
         })
+        const scene_clone1 = gltf.scene.clone()
+        const scene_clone2 = gltf.scene.clone()
+        const scene_clone3 = gltf.scene.clone()
+        const scene_clone4 = gltf.scene.clone()
+        const scene_clone5 = gltf.scene.clone()
+        const scene_clone6 = gltf.scene.clone()
+        const scene_clone7 = gltf.scene.clone()
+        const scene_clone8 = gltf.scene.clone()
+        scene_clone1.position.set(5, 0.15, 4.5)
+        scene_clone2.position.set(7, 0.15, 4.5)
+        scene_clone3.position.set(0, 0.15, 4.5)
+        scene_clone4.position.set(-2, 0.15, 4.5)
+        scene_clone5.position.set(5, 0.15, -6.5)
+        scene_clone6.position.set(7, 0.15, -6.5)
+        scene_clone7.position.set(0, 0.15, -6.5)
+        scene_clone8.position.set(-2, 0.15, -6.5)
+        // this.scene.add(gltf.scene)
+        this.scene.add(scene_clone1)
+        this.scene.add(scene_clone2)
+        this.scene.add(scene_clone3)
+        this.scene.add(scene_clone4)
+        this.scene.add(scene_clone5)
+        this.scene.add(scene_clone6)
+        this.scene.add(scene_clone7)
+        this.scene.add(scene_clone8)
+      })
 
+      glbloader.load('/model/oil/card.gltf', (gltf) => {
+        gltf.scene.traverse((child) => {
+          if (child.name === '立方体') {
+            child.position.set(0, 0, 0)
+          }
+        })
         this.scene.add(gltf.scene)
-        this.camera.lookAt(gltf.scene.position)
+        gltf.scene.position.set(3, 0, 3)
+      })
+      const pillarTexture = this.loader.load('/model/oil/3d66Model-1625299-files-19.jpg')
+      // const pillarTexture = this.loader.load('/model/oil/法相.png')
+      pillarTexture.wrapS = THREE.RepeatWrapping
+      pillarTexture.wrapT = THREE.RepeatWrapping
+      pillarTexture.encoding = THREE.sRGBEncoding
+      pillarTexture.flipY = false
+      pillarTexture.repeat.set(4, 10)
+      glbloader.load('/model/oil/station.glb', (gltf) => {
+        gltf.scene.traverse((child) => {
+          if (child.name.toLowerCase().includes('pillar')) {
+            const material = new THREE.MeshStandardMaterial({
+              map: pillarTexture,
+              roughness: 0.5,
+              metalness: 0.5
+              // specularMap: this.frontSTexture
+            })
+            child.material = material
+          }
+        })
+        this.scene.add(gltf.scene)
+      })
+      // 站牌
+      glbloader.load('/model/oil/card1.glb', (gltf) => {
+        this.scene.add(gltf.scene)
+        gltf.scene.position.set(12, 0, 17)
+        gltf.scene.rotation.set(0, Math.PI / 3, 0)
+      })
+
+      const speedTexture = this.loader.load('/model/oil/3d66Model-1625299-files-25.jpg')
+      // const speedTexture = this.loader.load('/model/oil/法相.png')
+      speedTexture.wrapS = THREE.RepeatWrapping
+      speedTexture.wrapT = THREE.RepeatWrapping
+      speedTexture.encoding = THREE.sRGBEncoding
+      speedTexture.flipY = false
+      // 减速带
+      glbloader.load('/model/oil/speed.glb', (gltf) => {
+        gltf.scene.traverse((child) => {
+          if (child.isMesh) {
+            child.material = new THREE.MeshStandardMaterial({
+              map: speedTexture,
+              roughness: 0.5,
+              metalness: 0.5
+            })
+          }
+          console.log(child, 'speed')
+        })
+        const scene_clone1 = gltf.scene.clone()
+        const scene_clone2 = gltf.scene.clone()
+        scene_clone1.position.set(25, 0, 12)
+        scene_clone1.rotation.set(0, Math.PI / 4, 0)
+        this.scene.add(scene_clone1)
+
+        scene_clone2.position.set(-20, 0, 12)
+        scene_clone2.rotation.set(0, -Math.PI / 4, 0)
+        this.scene.add(scene_clone2)
+
+        // this.scene.add(gltf.scene)
+        // gltf.scene.position.set(25, 0, 12)
+        // gltf.scene.rotation.set(0, Math.PI / 4, 0)
       })
     },
     initControls() {
