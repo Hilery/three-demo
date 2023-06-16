@@ -146,7 +146,6 @@ export default {
       glbloader.setDRACOLoader(dracoLoader)
       glbloader.load('/model/oil/test.gltf', (gltf) => {
         console.log(gltf)
-
         gltf.scene.traverse((child) => {
           if (child.isObject3D && child.isMesh) {
             if (child.name === 'Obj3d66-725752-179-298') {
@@ -225,15 +224,23 @@ export default {
         this.scene.add(scene_clone7)
         this.scene.add(scene_clone8)
       })
-
+      // 指示牌
       glbloader.load('/model/oil/card.gltf', (gltf) => {
         gltf.scene.traverse((child) => {
           if (child.name === '立方体') {
             child.position.set(0, 0, 0)
           }
         })
-        this.scene.add(gltf.scene)
-        gltf.scene.position.set(3, 0, 3)
+        const scene_clone1 = gltf.scene.clone()
+        const scene_clone2 = gltf.scene.clone()
+
+        scene_clone1.position.set(12, 1, 4.5)
+        scene_clone1.rotation.set(0, Math.PI / 2, 0)
+        this.scene.add(scene_clone1)
+
+        scene_clone2.position.set(12, 1, -6.5)
+        scene_clone2.rotation.set(0, Math.PI / 2, 0)
+        this.scene.add(scene_clone2)
       })
       const pillarTexture = this.loader.load('/model/oil/3d66Model-1625299-files-19.jpg')
       // const pillarTexture = this.loader.load('/model/oil/法相.png')
@@ -242,8 +249,19 @@ export default {
       pillarTexture.encoding = THREE.sRGBEncoding
       pillarTexture.flipY = false
       pillarTexture.repeat.set(4, 10)
+      const floorTexture = this.loader.load('/model/oil/3d66Model-1625299-files-28.jpg')
+      // const floorTexture = this.loader.load('/model/oil/法相.png')
+      floorTexture.wrapS = THREE.RepeatWrapping
+      floorTexture.wrapT = THREE.RepeatWrapping
+      floorTexture.encoding = THREE.sRGBEncoding
+      floorTexture.flipY = false
+      const floorTexture1 = floorTexture.clone()
+      floorTexture.repeat.set(20, 20)
+      floorTexture1.repeat.set(1, 15)
+
       glbloader.load('/model/oil/station.glb', (gltf) => {
         gltf.scene.traverse((child) => {
+          console.log(child, 'pannal')
           if (child.name.toLowerCase().includes('pillar')) {
             const material = new THREE.MeshStandardMaterial({
               map: pillarTexture,
@@ -252,6 +270,26 @@ export default {
               // specularMap: this.frontSTexture
             })
             child.material = material
+          } else if (child.name === 'Obj3d66-1625299-11-387001') {
+            const material = new THREE.MeshStandardMaterial({
+              map: floorTexture,
+              roughness: 0.5,
+              metalness: 0.1
+            // specularMap: this.frontSTexture
+            })
+            child.material = material
+            child.material.needsUpdate = true
+            child.material.map.wrapS = THREE.RepeatWrapping
+            child.material.map.wrapT = THREE.RepeatWrapping
+          } else if (child.name === 'Obj3d66-1625299-58-191001' || child.name === 'Obj3d66-1625299-58-191') {
+            const material = new THREE.MeshStandardMaterial({
+              map: floorTexture1
+            // specularMap: this.frontSTexture
+            })
+            child.material = material
+            child.material.needsUpdate = true
+            child.material.map.wrapS = THREE.RepeatWrapping
+            child.material.map.wrapT = THREE.RepeatWrapping
           }
         })
         this.scene.add(gltf.scene)
@@ -279,7 +317,6 @@ export default {
               metalness: 0.5
             })
           }
-          console.log(child, 'speed')
         })
         const scene_clone1 = gltf.scene.clone()
         const scene_clone2 = gltf.scene.clone()
