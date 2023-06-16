@@ -210,6 +210,7 @@ export default {
         scene_clone2.position.set(7, 0.15, 4.5)
         scene_clone3.position.set(0, 0.15, 4.5)
         scene_clone4.position.set(-2, 0.15, 4.5)
+
         scene_clone5.position.set(5, 0.15, -6.5)
         scene_clone6.position.set(7, 0.15, -6.5)
         scene_clone7.position.set(0, 0.15, -6.5)
@@ -299,6 +300,51 @@ export default {
         this.scene.add(gltf.scene)
         gltf.scene.position.set(12, 0, 17)
         gltf.scene.rotation.set(0, Math.PI / 3, 0)
+      })
+
+      const bannerTexture = this.loader.load('/model/oil/banner.jpg')
+      bannerTexture.wrapS = THREE.MirroredRepeatWrapping
+      bannerTexture.wrapT = THREE.MirroredRepeatWrapping
+      bannerTexture.encoding = THREE.sRGBEncoding
+      bannerTexture.flipY = false
+      // bannerTexture.repeat.set(1, 50)
+      // bannerTexture.offset.set(0, 10)
+      /**
+       * @description: 添加便利店
+       * @return {*}
+       */
+      glbloader.load('/model/oil/shop.glb', (gltf) => {
+        gltf.scene.traverse((child) => {
+          if (child.name === 'glass') {
+            const glassMaterial = new THREE.MeshPhysicalMaterial({
+              color: 0xffffff,
+              transparent: true, // 透明度设置为 true
+              opacity: 0.5, // 设置透明度
+              roughness: 0,
+              metalness: 0,
+              envMapIntensity: 1,
+              transmission: 0.95, // 折射度，表示光线经过材料时的衰减程度
+              clearcoat: 1,
+              clearcoatRoughness: 0,
+              refractionRatio: 1.5 // 折射率，控制光的折射程度
+            })
+            child.material = glassMaterial
+            child.material.needsUpdate = true
+          } else if (child.name === 'banner') {
+            console.log(child)
+            const material = new THREE.MeshStandardMaterial({
+              // color: 0xef2709,
+              map: bannerTexture,
+              roughness: 0.5,
+              metalness: 0.5
+            })
+            child.material = material
+          }
+        })
+
+        this.scene.add(gltf.scene)
+        // gltf.scene.scale.set(0.5, 0.5, 0.5)
+        gltf.scene.position.set(3, 0, -20)
       })
 
       const speedTexture = this.loader.load('/model/oil/3d66Model-1625299-files-25.jpg')
