@@ -276,7 +276,7 @@ export default {
               map: floorTexture,
               roughness: 0.5,
               metalness: 0.1
-            // specularMap: this.frontSTexture
+              // specularMap: this.frontSTexture
             })
             child.material = material
             child.material.needsUpdate = true
@@ -285,7 +285,7 @@ export default {
           } else if (child.name === 'Obj3d66-1625299-58-191001' || child.name === 'Obj3d66-1625299-58-191') {
             const material = new THREE.MeshStandardMaterial({
               map: floorTexture1
-            // specularMap: this.frontSTexture
+              // specularMap: this.frontSTexture
             })
             child.material = material
             child.material.needsUpdate = true
@@ -302,12 +302,20 @@ export default {
         gltf.scene.rotation.set(0, Math.PI / 3, 0)
       })
 
-      const bannerTexture = this.loader.load('/model/oil/banner.jpg')
-      bannerTexture.wrapS = THREE.MirroredRepeatWrapping
-      bannerTexture.wrapT = THREE.MirroredRepeatWrapping
-      bannerTexture.encoding = THREE.sRGBEncoding
-      bannerTexture.flipY = false
-      // bannerTexture.repeat.set(1, 50)
+      const wallTexture = this.loader.load('/model/oil/3d66Model-1625299-files-19.jpg')
+      wallTexture.wrapS = THREE.RepeatWrapping
+      wallTexture.wrapT = THREE.RepeatWrapping
+      wallTexture.encoding = THREE.sRGBEncoding
+      wallTexture.flipY = false
+      const ceilTexture = this.loader.load('/model/oil/3d66Model-1625299-files-6.jpg')
+      ceilTexture.wrapS = THREE.RepeatWrapping
+      ceilTexture.wrapT = THREE.RepeatWrapping
+      ceilTexture.encoding = THREE.sRGBEncoding
+      ceilTexture.flipY = false
+      ceilTexture.repeat.set(2, 1)
+      const wallTexture1 = wallTexture.clone()
+      wallTexture.repeat.set(6, 10)
+      wallTexture1.repeat.set(20, 10)
       // bannerTexture.offset.set(0, 10)
       /**
        * @description: 添加便利店
@@ -330,15 +338,43 @@ export default {
             })
             child.material = glassMaterial
             child.material.needsUpdate = true
-          } else if (child.name === 'banner') {
-            console.log(child)
-            const material = new THREE.MeshStandardMaterial({
-              // color: 0xef2709,
-              map: bannerTexture,
-              roughness: 0.5,
-              metalness: 0.5
-            })
-            child.material = material
+          } else if (child.name.toLowerCase().includes('wall')) {
+            if (child.name.toLowerCase() === 'wall001') {
+              const material = new THREE.MeshStandardMaterial({
+                map: ceilTexture,
+                roughness: 0.5,
+                metalness: 0.5
+                // specularMap: this.frontSTexture
+              })
+              child.material = material
+            } else if (child.name.toLowerCase() === 'wall002' || child.name.toLowerCase() === 'wall003') {
+              const material1 = new THREE.MeshStandardMaterial({
+                map: wallTexture,
+                side: THREE.FrontSide,
+                roughness: 0.5,
+                overdraw: true,
+                metalness: 0.5
+                // specularMap: this.frontSTexture
+              })
+              const material2 = new THREE.MeshStandardMaterial({
+                map: ceilTexture,
+                side: THREE.BackSide,
+                roughness: 0.5,
+                overdraw: true,
+                metalness: 0.5
+                // specularMap: this.frontSTexture
+              })
+              child.material = material1
+            } else {
+              const material = new THREE.MeshStandardMaterial({
+                map: wallTexture1,
+                roughness: 0.5,
+                metalness: 0.5
+                // specularMap: this.frontSTexture
+              })
+              child.material = material
+            }
+
           }
         })
 
@@ -403,10 +439,8 @@ export default {
 </script>
 
 <style lang="less" scoped>
-  *
-{
-    margin: 0;
-    padding: 0;
+* {
+  margin: 0;
+  padding: 0;
 }
-
 </style>
