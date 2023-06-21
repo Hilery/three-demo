@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div ref="wrap">
     <div id="webgl" ref="webgl" class="webgl" canvas-id="canvasId" />
 
   </div>
@@ -15,10 +15,14 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment'
 // 导入rgbeloader
 import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader'
+import Stats from 'stats.js'
+// 动画库
+import gsap from 'gsap'
 import * as dat from 'dat.gui'
 export default {
   data() {
     return {
+      stats: null,
       gui: null,
       camera: null,
       scene: null,
@@ -30,7 +34,9 @@ export default {
       clock: new THREE.Clock(),
       model: null,
       frontTexture: null,
-      frontSTexture: null
+      frontSTexture: null,
+      carModel: null,
+      isNeedLookAt: false
     }
   },
   mounted() {
@@ -50,6 +56,8 @@ export default {
     },
     addGui() {
       this.gui = new dat.GUI()
+
+      // this.gui.add(button, 'add').name('添加')
     },
     initMap() {
       const loader = new THREE.TextureLoader()
@@ -73,6 +81,8 @@ export default {
       this.loader = loader
     },
     initThree() {
+      this.stats = new Stats()
+      this.$refs.wrap.appendChild(this.stats.dom)
       const width = document.documentElement.clientWidth
       const height = document.documentElement.clientHeight
       this.renderer = new THREE.WebGLRenderer({
@@ -84,9 +94,13 @@ export default {
       this.$refs.webgl.appendChild(this.renderer.domElement)
     },
     initCamera() {
-      this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000)
+       const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000)
+       this.camera = camera
       // 设置相机位置 -50,50,130
-      this.camera.position.set(0, 10, 50)
+      this.camera.position.set(0, 20, 70)
+      // camera.loockAt(0, 0, 0)
+      console.log(this.camera,'camera')
+      console.log(camera,'camera')
       // 更新摄像头宽高比例
       this.camera.aspect = window.innerWidth / window.innerHeight
       // 更新摄像头投影矩阵
@@ -243,6 +257,16 @@ export default {
         scene_clone2.rotation.set(0, Math.PI / 2, 0)
         this.scene.add(scene_clone2)
       })
+
+      // 车子
+      glbloader.load('/model/oil/milkTruck.glb', (gltf) => {
+        gltf.scene.rotation.set(0, -Math.PI * 0.75, 0)
+        gltf.scene.position.set(28, 0, 16)
+        this.gui.add(gltf.scene.position, 'x', -20, 20, 1).name('车子x轴')
+        this.gui.add(gltf.scene.position, 'z', -20, 20, 1).name('车子z轴')
+        this.gui.add(gltf.scene.rotation, 'y', -Math.PI, Math.PI, 0.01).name('车子旋转')
+        this.addAnimationButton(gltf)
+      })
       const pillarTexture = this.loader.load('/model/oil/3d66Model-1625299-files-19.jpg')
       // const pillarTexture = this.loader.load('/model/oil/法相.png')
       pillarTexture.wrapS = THREE.RepeatWrapping
@@ -374,7 +398,6 @@ export default {
               })
               child.material = material
             }
-
           }
         })
 
@@ -420,14 +443,138 @@ export default {
     },
     render() {
       requestAnimationFrame(this.render)
+      this.stats.update() // 3.0、更新性能插件
       const elapsedTime = this.clock.getElapsedTime()
       const delta = elapsedTime - this.previousTime
       this.previousTime = elapsedTime
 
+      this.mixer && this.mixer.update(delta)
+      if (this.isNeedLookAt && this.camera) {
+        this.camera.position.set(this.carModel.position.x, this.carModel.position.y + 4, this.carModel.position.z)
+        
+      }
       this.controls.update()
       this.renderer.render(this.scene, this.camera)
     },
+    addAnimationButton(carModel) {
+      const tl = gsap.timeline()
+      let carModel_clone = carModel.scene.clone()
+      this.carModel = carModel_clone
+      this.scene.add(carModel_clone)
+      const obj = {
+        add: () => {
+          this.mixer = new THREE.AnimationMixer(carModel_clone)
+          this.mixer.clipAction(carModel.animations[0]).play()
+          tl.add([
+            gsap.to(
+              carModel_clone.position,
+              {
+                duration: 1.5,
+                ease: 'none',
+                x: '21.5',
+                z: '9'
+              }
+            ),
+            gsap.to(
+              carModel_clone.rotation,
+              {
+                duration: 1.5,
+                ease: 'none',
+                y: Math.PI * -0.25
+              }
+            )
+          ])
+          tl.add([
+            gsap.to(
+              carModel_clone.position,
+              {
+                duration: 1.5,
+                ease: 'none',
+                x: '15',
+                z: '2'
+              }
+            ),
+            gsap.to(
+              carModel_clone.rotation,
+              {
+                duration: 1.5,
+                ease: 'none',
+                y: Math.PI * -0.5
+              }
+            )
+          ])
+          tl.add([
+            gsap.to(
+              carModel_clone.position,
+              {
+                duration: 1.5,
+                ease: 'none',
+                x: '8',
+                z: '2'
+              }
+            )
 
+          ])
+        },
+        finish: () => {
+          tl.add([
+            gsap.to(
+              carModel_clone.position,
+              {
+                duration: 2.5,
+                ease: 'none',
+                x: '-8',
+                z: '2'
+              }
+            )
+          ])
+          tl.add([
+            gsap.to(
+              carModel_clone.position,
+              {
+                duration: 1.5,
+                ease: 'none',
+                x: '-15',
+                z: '2'
+              }
+            ),
+            gsap.to(
+              carModel_clone.rotation,
+              {
+                duration: 1.5,
+                ease: 'none',
+                y: (Math.PI * -0.75)
+              }
+            )
+          ]),
+          tl.add([
+            gsap.to(
+              carModel_clone.position,
+              {
+                duration: 1.5,
+                ease: 'none',
+                x: '-21.5',
+                z: '9',
+                onComplete: () => {
+                  this.scene.remove(carModel_clone)
+                  carModel_clone = carModel.scene.clone()
+                  this.carModel = carModel_clone
+                }
+              }
+
+            )
+          ])
+        },
+        loockAt: () => {
+          this.isNeedLookAt = true
+          this.camera.position.set(this.carModel.position.x, this.carModel.position.y + 4, this.carModel.position.z)
+          this.camera.loockAt(this.carModel.position.x + 6, this.carModel.position.y, this.carModel.position.z)
+        }
+      }
+      this.gui.add(obj, 'add').name('加油车辆')
+      this.gui.add(obj, 'finish').name('加油结束')
+      this.gui.add(obj, 'loockAt').name('第一视角')
+    },
     updateAllMeterial() {
 
     },
