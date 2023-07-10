@@ -70,6 +70,7 @@ export default {
         100
       )
       camera.position.set(5, 2, 8)
+    
       this.camera = camera
       const controls = new OrbitControls(camera, renderer.domElement)
       controls.target.set(0, 0.5, 0)
